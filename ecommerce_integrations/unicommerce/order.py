@@ -182,12 +182,19 @@ def _create_order(order: UnicommerceOrder, customer) -> None:
 
 	facility_code = _get_facility_code(order["saleOrderItems"])
 	company_address, dispatch_address = settings.get_company_addresses(facility_code)
+	dat = order["shippingPackages"]
+	delivery_date = dat[0]["dispatched"]
+	ts = int(delivery_date)
+	disp_date = get_unicommerce_date(ts)
+	print(dat,ts,disp_date)
 
 	so = frappe.get_doc(
 		{
 			"doctype": "Sales Order",
 			"customer": customer.name,
 			"naming_series": channel_config.sales_order_series or settings.sales_order_series,
+			"display_order_code" : (order["displayOrderCode"]),
+			"unicommerce_dispatch_date" : disp_date,
 			ORDER_CODE_FIELD: order["code"],
 			ORDER_STATUS_FIELD: order["status"],
 			CHANNEL_ID_FIELD: order["channel"],
