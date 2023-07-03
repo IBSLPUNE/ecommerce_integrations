@@ -195,6 +195,7 @@ def _create_order(order: UnicommerceOrder, customer) -> None:
 			"naming_series": channel_config.sales_order_series or settings.sales_order_series,
 			"display_order_code" : (order["displayOrderCode"]),
 			"unicommerce_dispatch_date" : disp_date,
+
 			ORDER_CODE_FIELD: order["code"],
 			ORDER_STATUS_FIELD: order["status"],
 			CHANNEL_ID_FIELD: order["channel"],

@@ -41,7 +41,12 @@
   "sync_status_section",
   "last_order_sync",
   "column_break_20",
-  "last_inventory_sync"
+  "last_inventory_sync",
+  "uniware_customisation_section",
+  "purchase_tab",
+  "truncate_logs",
+  "start_sync",
+  "ticker"
  ],
  "fields": [
   {
@@ -262,12 +267,37 @@
    "fieldname": "delivery_note",
    "fieldtype": "Check",
    "label": "Import Delivery Notes from Unicommerce on Shipment"
+  },
+  {
+   "fieldname": "truncate_logs",
+   "fieldtype": "Button",
+   "label": "Truncate logs"
+  },
+  {
+   "fieldname": "uniware_customisation_section",
+   "fieldtype": "Section Break",
+   "label": "Uniware Customisation"
+  },
+  {
+   "fieldname": "purchase_tab",
+   "fieldtype": "Tab Break",
+   "label": "Purchase "
+  },
+  {
+   "fieldname": "start_sync",
+   "fieldtype": "Button",
+   "label": "Start sync"
+  },
+  {
+   "fieldname": "ticker",
+   "fieldtype": "Data",
+   "label": "Ticker"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2023-05-02 14:04:26.684256",
+ "modified": "2023-07-03 14:44:29.835132",
  "modified_by": "Administrator",
  "module": "unicommerce",
  "name": "Unicommerce Settings",
