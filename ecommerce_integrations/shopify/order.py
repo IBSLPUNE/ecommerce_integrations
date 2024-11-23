@@ -31,17 +31,20 @@ DEFAULT_TAX_FIELDS = {
 
 def sync_sales_order(payload, request_id=None):
 	order = payload
+	#frappe.throw(str(order))
 	frappe.set_user("Administrator")
 	frappe.flags.request_id = request_id
 
 	if frappe.db.get_value("Sales Order", filters={ORDER_ID_FIELD: cstr(order["id"])}):
+		#frappe.throw(str("hello"))
 		create_shopify_log(status="Invalid", message="Sales order already exists, not synced")
 		return
 	try:
-		shopify_customer = order.get("customer", {})
-		shopify_customer["billing_address"] = order.get("billing_address")
-		shopify_customer["shipping_address"] = order.get("shipping_address")
+		shopify_customer = order.get("customer") if order.get("customer") is not None else {}
+		shopify_customer["billing_address"] = order.get("billing_address", "")
+		shopify_customer["shipping_address"] = order.get("shipping_address", "")
 		customer_id = shopify_customer.get("id")
+		#frappe.throw(str(customer_id))
 		if customer_id:
 			customer = ShopifyCustomer(customer_id=customer_id)
 			if not customer.is_synced():
@@ -65,6 +68,7 @@ def create_order(order, setting, company=None):
 	from ecommerce_integrations.shopify.invoice import create_sales_invoice
 
 	so = create_sales_order(order, setting, company)
+	#frappe.throw(str(so))
 	if so:
 		if order.get("financial_status") == "paid":
 			create_sales_invoice(order, setting, so)
@@ -72,13 +76,22 @@ def create_order(order, setting, company=None):
 		if order.get("fulfillments"):
 			create_delivery_note(order, setting, so)
 
-
 def create_sales_order(shopify_order, setting, company=None):
 	customer = setting.default_customer
-	if customer_id := shopify_order.get("customer", {}).get("id"):
-		customer = frappe.db.get_value("Customer", {CUSTOMER_ID_FIELD: customer_id}, "name")
+	#frappe.throw(str(customer))
+	if shopify_order.get("customer", {}):
+		if customer_id := shopify_order.get("customer", {}).get("id"):
+			customer = frappe.db.get_value("Customer", {CUSTOMER_ID_FIELD: customer_id}, "name")
 
 	so = frappe.db.get_value("Sales Order", {ORDER_ID_FIELD: shopify_order.get("id")}, "name")
+	#frappe.throw(str(so))
+	prov = shopify_order.get("billing_address", {}).get("province")
+	comp = None
+	for row in setting.get("company_mapping", {}):
+		if row.get("custom_province") == prov:
+			#frappe.throw(str(row.get('custom_company')))
+			comp = row.get("custom_company")
+			break
 
 	if not so:
 		items = get_order_items(
@@ -110,7 +123,7 @@ def create_sales_order(shopify_order, setting, company=None):
 				"customer": customer,
 				"transaction_date": getdate(shopify_order.get("created_at")) or nowdate(),
 				"delivery_date": getdate(shopify_order.get("created_at")) or nowdate(),
-				"company": setting.company,
+				"company": comp,
 				"selling_price_list": get_dummy_price_list(),
 				"ignore_pricing_rule": 1,
 				"items": items,
@@ -133,7 +146,6 @@ def create_sales_order(shopify_order, setting, company=None):
 		so = frappe.get_doc("Sales Order", so)
 
 	return so
-
 
 def get_order_items(order_items, setting, delivery_date, taxes_inclusive):
 	items = []
@@ -360,8 +372,8 @@ def cancel_order(payload, request_id=None):
 	"""
 	frappe.set_user("Administrator")
 	frappe.flags.request_id = request_id
-
 	order = payload
+
 
 	try:
 		order_id = order["id"]
@@ -426,3 +438,234 @@ def _fetch_old_orders(from_time, to_time):
 			# Using generator instead of fetching all at once is better for
 			# avoiding rate limits and reducing resource usage.
 			yield order.to_dict()
+
+
+
+# def load_raw_data():
+#     raw_data = {
+#         "admin_graphql_api_id": "gid://shopify/Order/5768049262806",
+#         "app_id": 59566817281,
+#         "billing_address": {
+#             "address1": "Survey no 51, Navikusam orchard, Doddaballapur road",
+#             "address2": None,
+#             "city": "Bangalore 560064",
+#             "company": None,
+#             "country": "India",
+#             "country_code": "IN",
+#             "first_name": "Kumud",
+#             "last_name": "Sampath",
+#             "latitude": None,
+#             "longitude": None,
+#             "name": "Kumud Sampath",
+#             "phone": "9845055552",
+#             "province": "Delhi",
+#             "province_code": "DL",
+#             "zip": "110030"
+#         },
+#         "browser_ip": None,
+#         "buyer_accepts_marketing": True,
+#         "cancel_reason": None,
+#         "cancelled_at": None,
+#         "cart_token": None,
+#         "checkout_id": None,
+#         "checkout_token": None,
+#         "client_details": None,
+#         "closed_at": None,
+#         "confirmation_number": "IDQ0U9C68",
+#         "confirmed": True,
+#         "contact_email": "kumudsampath@gmail.com",
+#         "created_at": "2024-11-23T14:57:11+05:30",
+#         "currency": "INR",
+#         "current_subtotal_price": "9698.00",
+#         "current_subtotal_price_set": {
+#             "presentment_money": {
+#                 "amount": "9698.00",
+#                 "currency_code": "INR"
+#             },
+#             "shop_money": {
+#                 "amount": "9698.00",
+#                 "currency_code": "INR"
+#             }
+#         },
+#         "current_total_additional_fees_set": None,
+#         "current_total_discounts": "0.00",
+#         "current_total_discounts_set": {
+#             "presentment_money": {
+#                 "amount": "0.00",
+#                 "currency_code": "INR"
+#             },
+#             "shop_money": {
+#                 "amount": "0.00",
+#                 "currency_code": "INR"
+#             }
+#         },
+#         "current_total_duties_set": None,
+#         "current_total_price": "9698.00",
+#         "current_total_price_set": {
+#             "presentment_money": {
+#                 "amount": "9698.00",
+#                 "currency_code": "INR"
+#             },
+#             "shop_money": {
+#                 "amount": "9698.00",
+#                 "currency_code": "INR"
+#             }
+#         },
+#         "current_total_tax": "986.32",
+#         "current_total_tax_set": {
+#             "presentment_money": {
+#                 "amount": "986.32",
+#                 "currency_code": "INR"
+#             },
+#             "shop_money": {
+#                 "amount": "986.32",
+#                 "currency_code": "INR"
+#             }
+#         },
+#         "customer": {
+#             "admin_graphql_api_id": "gid://shopify/Customer/5286100140186",
+#             "created_at": "2021-05-29T15:24:43+05:30",
+#             "currency": "INR",
+#             "default_address": {
+#                 "address1": "Survey no 51, Navikusam orchard, Doddaballapur road",
+#                 "address2": None,
+#                 "city": "Bangalore 560064",
+#                 "company": None,
+#                 "country": "India",
+#                 "country_code": "IN",
+#                 "country_name": "India",
+#                 "customer_id": 5286100140186,
+#                 "default": True,
+#                 "first_name": "Kumud",
+#                 "id": 9057222000854,
+#                 "last_name": "Sampath",
+#                 "name": "Kumud Sampath",
+#                 "phone": "9845055552",
+#                 "province": "Karnataka",
+#                 "province_code": "KA",
+#                 "zip": "560064"
+#             },
+#             "email": "kumudsampath@gmail.com",
+#             "email_marketing_consent": {
+#                 "consent_updated_at": "2021-05-29T15:24:44+05:30",
+#                 "opt_in_level": "single_opt_in",
+#                 "state": "subscribed"
+#             },
+#             "first_name": "Kumud",
+#             "id": 5286100140186,
+#             "last_name": "Sampath",
+#             "multipass_identifier": None,
+#             "note": None,
+#             "phone": "+919845055552",
+#             "sms_marketing_consent": {
+#                 "consent_collected_from": "OTHER",
+#                 "consent_updated_at": "2021-06-09T14:55:45+05:30",
+#                 "opt_in_level": "single_opt_in",
+#                 "state": "subscribed"
+#             },
+#             "state": "disabled",
+#             "tags": "",
+#             "tax_exempt": False,
+#             "tax_exemptions": [],
+#             "updated_at": "2024-11-23T14:57:11+05:30",
+#             "verified_email": True
+#         },
+#         "customer_locale": None,
+#         "device_id": None,
+#         "discount_applications": [],
+#         "discount_codes": [],
+#         "email": "kumudsampath@gmail.com",
+#         "estimated_taxes": False,
+#         "financial_status": "paid",
+#         "fulfillment_status": None,
+#         "fulfillments": [],
+#         "id": 5768049262806,
+#         "landing_site": None,
+#         "landing_site_ref": None,
+#         "line_items": [
+#             {
+#                 "admin_graphql_api_id": "gid://shopify/LineItem/14114913485014",
+#                 "attributed_staffs": [],
+#                 "current_quantity": 1,
+#                 "discount_allocations": [],
+#                 "duties": [],
+#                 "fulfillable_quantity": 1,
+#                 "fulfillment_service": "manual",
+#                 "fulfillment_status": None,
+#                 "gift_card": False,
+#                 "grams": 0,
+#                 "id": 14114913485014,
+#                 "name": "Finero Mini Portable Espresso Machine + 50 FREE Coffee Capsules + 1 Year Membership Benefits",
+#                 "price": "4999.00",
+#                 "price_set": {
+#                     "presentment_money": {
+#                         "amount": "4999.00",
+#                         "currency_code": "INR"
+#                     },
+#                     "shop_money": {
+#                         "amount": "4999.00",
+#                         "currency_code": "INR"
+#                     }
+#                 },
+#                 "product_exists": True,
+#                 "product_id": 8769781825750,
+#                 "properties": [],
+#                 "quantity": 1,
+#                 "requires_shipping": True,
+#                 "sku": "BUNDL-FIN3-BK-VER1-02",
+#                 "tax_lines": [
+#                     {
+#                         "channel_liable": False,
+#                         "price": "393.08",
+#                         "price_set": {
+#                             "presentment_money": {
+#                                 "amount": "393.08",
+#                                 "currency_code": "INR"
+#                             },
+#                             "shop_money": {
+#                                 "amount": "393.08",
+#                                 "currency_code": "INR"
+#                             }
+#                         },
+#                         "rate": 0.18,
+#                         "title": "IGST"
+#                     },
+#                     {
+#                         "channel_liable": False,
+#                         "price": "115.35",
+#                         "price_set": {
+#                             "presentment_money": {
+#                                 "amount": "115.35",
+#                                 "currency_code": "INR"
+#                             },
+#                             "shop_money": {
+#                                 "amount": "115.35",
+#                                 "currency_code": "INR"
+#                             }
+#                         },
+#                         "rate": 0.05,
+#                         "title": "IGST"
+#                     }
+#                 ],
+#                 "taxable": True,
+#                 "title": "Finero Mini Portable Espresso Machine + 50 FREE Coffee Capsules + 1 Year Membership Benefits",
+#                 "total_discount": "0.00",
+#                 "total_discount_set": {
+#                     "presentment_money": {
+#                         "amount": "0.00",
+#                         "currency_code": "INR"
+#                     },
+#                     "shop_money": {
+#                         "amount": "0.00",
+#                         "currency_code": "INR"
+#                     }
+#                 },
+#                 "variant_id": 46295659380950,
+#                 "variant_inventory_management": "shopify",
+#                 "variant_title": None,
+#                 "vendor": "Coffeeza"
+#             }
+#         ]
+#     }
+#     setting = frappe.get_doc(SETTING_DOCTYPE)
+#     create_sales_order(raw_data,setting)
