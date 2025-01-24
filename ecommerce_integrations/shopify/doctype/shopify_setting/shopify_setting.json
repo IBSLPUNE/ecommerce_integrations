@@ -387,7 +387,24 @@
    "fieldtype": "Link",
    "label": "Default Shipping Charges Account",
    "options": "Account"
+  },
+  {
+   "fieldname": "section_break_dhca",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "company_mapping",
+   "fieldtype": "Table",
+   "label": "Company Mapping",
+   "options": "Company mapping"
+  },
+  {
+   "fieldname": "warehouse_mapping",
+   "fieldtype": "Table",
+   "label": "Warehouse Mapping",
+   "options": "Warehouse mapping"
   }
+
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
