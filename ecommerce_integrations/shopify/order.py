@@ -80,6 +80,13 @@ def create_sales_order(shopify_order, setting, company=None):
 			customer = frappe.db.get_value("Customer", {CUSTOMER_ID_FIELD: customer_id}, "name")
 
 	so = frappe.db.get_value("Sales Order", {ORDER_ID_FIELD: shopify_order.get("id")}, "name")
+	prov = shopify_order.get("billing_address", {}).get("province")
+	company = None
+	for row in setting.get("company_mapping", {}):
+		if row.get("custom_province") == prov:
+			#frappe.throw(str(row.get('custom_company')))
+			company = row.get("custom_company")
+			break
 
 	if not so:
 		items = get_order_items(
@@ -87,6 +94,7 @@ def create_sales_order(shopify_order, setting, company=None):
 			setting,
 			getdate(shopify_order.get("created_at")),
 			taxes_inclusive=shopify_order.get("taxes_included"),
+			company,
 		)
 
 		if not items:
@@ -111,7 +119,7 @@ def create_sales_order(shopify_order, setting, company=None):
 				"customer": customer,
 				"transaction_date": getdate(shopify_order.get("created_at")) or nowdate(),
 				"delivery_date": getdate(shopify_order.get("created_at")) or nowdate(),
-				"company": setting.company,
+				"company": company,
 				"selling_price_list": get_dummy_price_list(),
 				"ignore_pricing_rule": 1,
 				"items": items,
@@ -136,10 +144,16 @@ def create_sales_order(shopify_order, setting, company=None):
 	return so
 
 
-def get_order_items(order_items, setting, delivery_date, taxes_inclusive):
+def get_order_items(order_items, setting, delivery_date, taxes_inclusive,company):
 	items = []
 	all_product_exists = True
 	product_not_exists = []
+
+	custom_warehouse = None
+	for row in setting.get("company_mapping", {}):
+		if row.get("custom_company") == company:
+			custom_warehouse = row.get("warehouse")
+			break
 
 	for shopify_item in order_items:
 		if not shopify_item.get("product_exists"):
@@ -172,7 +186,6 @@ def get_order_items(order_items, setting, delivery_date, taxes_inclusive):
 
 
 def _get_item_price(line_item, taxes_inclusive: bool) -> float:
-
 	price = flt(line_item.get("price"))
 	qty = cint(line_item.get("quantity"))
 
@@ -206,7 +219,8 @@ def get_order_taxes(shopify_order, setting, items):
 					"charge_type": "Actual",
 					"account_head": get_tax_account_head(tax, charge_type="sales_tax"),
 					"description": (
-						get_tax_account_description(tax) or f"{tax.get('title')} - {tax.get('rate') * 100.0:.2f}%"
+						get_tax_account_description(tax)
+						or f"{tax.get('title')} - {tax.get('rate') * 100.0:.2f}%"
 					),
 					"tax_amount": tax.get("price"),
 					"included_in_print_rate": 0,
@@ -259,11 +273,13 @@ def consolidate_order_taxes(taxes):
 	return tax_account_wise_data.values()
 
 
-def get_tax_account_head(tax, charge_type: Optional[Literal["shipping", "sales_tax"]] = None):
+def get_tax_account_head(tax, charge_type: Literal["shipping", "sales_tax"] | None = None):
 	tax_title = str(tax.get("title"))
 
 	tax_account = frappe.db.get_value(
-		"Shopify Tax Account", {"parent": SETTING_DOCTYPE, "shopify_tax": tax_title}, "tax_account",
+		"Shopify Tax Account",
+		{"parent": SETTING_DOCTYPE, "shopify_tax": tax_title},
+		"tax_account",
 	)
 
 	if not tax_account and charge_type:
@@ -279,7 +295,9 @@ def get_tax_account_description(tax):
 	tax_title = tax.get("title")
 
 	tax_description = frappe.db.get_value(
-		"Shopify Tax Account", {"parent": SETTING_DOCTYPE, "shopify_tax": tax_title}, "tax_description",
+		"Shopify Tax Account",
+		{"parent": SETTING_DOCTYPE, "shopify_tax": tax_title},
+		"tax_description",
 	)
 
 	return tax_description
@@ -317,7 +335,8 @@ def update_taxes_with_shipping_lines(taxes, shipping_lines, setting, items, taxe
 					{
 						"charge_type": "Actual",
 						"account_head": get_tax_account_head(shipping_charge, charge_type="shipping"),
-						"description": get_tax_account_description(shipping_charge) or shipping_charge["title"],
+						"description": get_tax_account_description(shipping_charge)
+						or shipping_charge["title"],
 						"tax_amount": shipping_charge_amount,
 						"cost_center": setting.cost_center,
 					}
@@ -329,7 +348,8 @@ def update_taxes_with_shipping_lines(taxes, shipping_lines, setting, items, taxe
 					"charge_type": "Actual",
 					"account_head": get_tax_account_head(tax, charge_type="sales_tax"),
 					"description": (
-						get_tax_account_description(tax) or f"{tax.get('title')} - {tax.get('rate') * 100.0:.2f}%"
+						get_tax_account_description(tax)
+						or f"{tax.get('title')} - {tax.get('rate') * 100.0:.2f}%"
 					),
 					"tax_amount": tax["price"],
 					"cost_center": setting.cost_center,

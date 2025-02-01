@@ -58,7 +58,9 @@
   "old_orders_from",
   "old_orders_to",
   "is_old_data_migrated",
-  "last_inventory_sync"
+  "last_inventory_sync",
+  "section_break_dhca",
+  "company_mapping"
  ],
  "fields": [
   {
@@ -397,19 +399,12 @@
    "fieldtype": "Table",
    "label": "Company Mapping",
    "options": "Company mapping"
-  },
-  {
-   "fieldname": "warehouse_mapping",
-   "fieldtype": "Table",
-   "label": "Warehouse Mapping",
-   "options": "Warehouse mapping"
   }
-
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2023-10-24 10:38:49.247431",
+ "modified": "2025-01-30 17:12:11.342066",
  "modified_by": "Administrator",
  "module": "shopify",
  "name": "Shopify Setting",
