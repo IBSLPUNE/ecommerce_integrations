@@ -81,7 +81,6 @@ def create_sales_order(shopify_order, setting, company=None):
 
 	so = frappe.db.get_value("Sales Order", {ORDER_ID_FIELD: shopify_order.get("id")}, "name")
 	prov = shopify_order.get("billing_address", {}).get("province")
-	company = None
 	for row in setting.get("company_mapping", {}):
 		if row.get("custom_province") == prov:
 			#frappe.throw(str(row.get('custom_company')))
@@ -93,8 +92,8 @@ def create_sales_order(shopify_order, setting, company=None):
 			shopify_order.get("line_items"),
 			setting,
 			getdate(shopify_order.get("created_at")),
-			taxes_inclusive=shopify_order.get("taxes_included"),
 			company,
+			taxes_inclusive=shopify_order.get("taxes_included"),
 		)
 
 		if not items:
@@ -144,7 +143,7 @@ def create_sales_order(shopify_order, setting, company=None):
 	return so
 
 
-def get_order_items(order_items, setting, delivery_date, taxes_inclusive,company):
+def get_order_items(order_items, setting, delivery_date,company, taxes_inclusive):
 	items = []
 	all_product_exists = True
 	product_not_exists = []
@@ -173,7 +172,7 @@ def get_order_items(order_items, setting, delivery_date, taxes_inclusive,company
 					"delivery_date": delivery_date,
 					"qty": shopify_item.get("quantity"),
 					"stock_uom": shopify_item.get("uom") or "Nos",
-					"warehouse": setting.warehouse,
+					"warehouse": custom_warehouse,
 					ORDER_ITEM_DISCOUNT_FIELD: (
 						_get_total_discount(shopify_item) / cint(shopify_item.get("quantity"))
 					),
