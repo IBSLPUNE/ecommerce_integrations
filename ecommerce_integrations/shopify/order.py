@@ -324,7 +324,7 @@ def get_tax_account_description(tax):
 def update_taxes_with_shipping_lines(taxes, shipping_lines, setting, items, taxes_inclusive=False):
 	"""Shipping lines represents the shipping details,
 	each such shipping detail consists of a list of tax_lines"""
-	shipping_as_item = cint(setting.add_shipping_as_item) and setting.
+	shipping_as_item = cint(setting.add_shipping_as_item) and setting.shipping_item
 
 	for shipping_charge in shipping_lines:
 		if shipping_charge.get("price"):
