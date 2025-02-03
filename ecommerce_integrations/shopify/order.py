@@ -80,12 +80,6 @@ def create_sales_order(shopify_order, setting, company=None):
 			customer = frappe.db.get_value("Customer", {CUSTOMER_ID_FIELD: customer_id}, "name")
 
 	so = frappe.db.get_value("Sales Order", {ORDER_ID_FIELD: shopify_order.get("id")}, "name")
-	prov = shopify_order.get("billing_address", {}).get("province")
-	for row in setting.get("company_mapping", {}):
-		if row.get("custom_province") == prov:
-			#frappe.throw(str(row.get('custom_company')))
-			company = row.get("custom_company")
-			break
 
 	if not so:
 		items = get_order_items(
@@ -108,7 +102,9 @@ def create_sales_order(shopify_order, setting, company=None):
 
 			return ""
 
-		taxes = get_order_taxes(shopify_order, setting, items)
+		cost_center = get_cost_center(shopify_order,setting,items)
+		company = get_company(shopify_order,setting,items)
+		taxes = get_order_taxes(shopify_order, setting, items,cost_center)
 		so = frappe.get_doc(
 			{
 				"doctype": "Sales Order",
@@ -142,17 +138,29 @@ def create_sales_order(shopify_order, setting, company=None):
 
 	return so
 
+def get_company(shopify_order,setting,items):
+	prov = shopify_order.get("billing_address", {}).get("province")
+	for row in setting.get("company_mapping", {}):
+		if row.get("custom_province") == prov:
+			#frappe.throw(str(row.get('custom_company')))
+			company = row.get("custom_company")
+			break
+	return company
+
+def get_cost_center(shopify_order,setting,items):
+	prov = shopify_order.get("billing_address", {}).get("province")
+	for row in setting.get("company_mapping", {}):
+		if row.get("custom_province") == prov:
+			#frappe.throw(str(row.get('custom_company')))
+			cost_center = row.get("cost_center")
+			break
+	return cost_center
+
 
 def get_order_items(order_items, setting, delivery_date,company, taxes_inclusive):
 	items = []
 	all_product_exists = True
 	product_not_exists = []
-
-	custom_warehouse = None
-	for row in setting.get("company_mapping", {}):
-		if row.get("custom_company") == company:
-			custom_warehouse = row.get("warehouse")
-			break
 
 	for shopify_item in order_items:
 		if not shopify_item.get("product_exists"):
@@ -164,6 +172,7 @@ def get_order_items(order_items, setting, delivery_date,company, taxes_inclusive
 
 		if all_product_exists:
 			item_code = get_item_code(shopify_item)
+			custom_warehouse = warehouse_mapping(order_items, setting, delivery_date,company, taxes_inclusive)
 			items.append(
 				{
 					"item_code": item_code,
@@ -183,6 +192,13 @@ def get_order_items(order_items, setting, delivery_date,company, taxes_inclusive
 
 	return items
 
+def warehouse_mapping(order_items, setting, delivery_date,company, taxes_inclusive):
+	custom_warehouse = None
+	for row in setting.get("company_mapping", {}):
+		if row.get("custom_company") == company:
+			custom_warehouse = row.get("warehouse")
+			break
+	return custom_warehouse
 
 def _get_item_price(line_item, taxes_inclusive: bool) -> float:
 	price = flt(line_item.get("price"))
@@ -206,7 +222,7 @@ def _get_total_discount(line_item) -> float:
 	return sum(flt(discount.get("amount")) for discount in discount_allocations)
 
 
-def get_order_taxes(shopify_order, setting, items):
+def get_order_taxes(shopify_order, setting, items,cost_center):
 	taxes = []
 	line_items = shopify_order.get("line_items")
 
@@ -223,7 +239,7 @@ def get_order_taxes(shopify_order, setting, items):
 					),
 					"tax_amount": tax.get("price"),
 					"included_in_print_rate": 0,
-					"cost_center": setting.cost_center,
+					"cost_center": cost_center,
 					"item_wise_tax_detail": {item_code: [flt(tax.get("rate")) * 100, flt(tax.get("price"))]},
 					"dont_recompute_tax": 1,
 				}
