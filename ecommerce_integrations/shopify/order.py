@@ -103,7 +103,7 @@ def create_sales_order(shopify_order, setting, company=None):
 			return ""
 
 		cost_center = get_cost_center(shopify_order,setting,items)
-		company = get_company(shopify_order,setting,items)
+		company = get_company(shopify_order,setting)
 		taxes = get_order_taxes(shopify_order, setting, items,cost_center)
 		so = frappe.get_doc(
 			{
@@ -138,9 +138,9 @@ def create_sales_order(shopify_order, setting, company=None):
 
 	return so
 
-def get_company(shopify_order,setting,items):
+def get_company(shopify_order,setting):
 	prov = shopify_order.get("billing_address", {}).get("province")
-	for row in setting.get("company_mapping", {}):
+	for row in setting.get("company_mapping", []):
 		if row.get("custom_province") == prov:
 			#frappe.throw(str(row.get('custom_company')))
 			company = row.get("custom_company")
@@ -149,7 +149,7 @@ def get_company(shopify_order,setting,items):
 
 def get_cost_center(shopify_order,setting,items):
 	prov = shopify_order.get("billing_address", {}).get("province")
-	for row in setting.get("company_mapping", {}):
+	for row in setting.get("company_mapping", []):
 		if row.get("custom_province") == prov:
 			#frappe.throw(str(row.get('custom_company')))
 			cost_center = row.get("cost_center")
@@ -225,6 +225,7 @@ def _get_total_discount(line_item) -> float:
 def get_order_taxes(shopify_order, setting, items,cost_center):
 	taxes = []
 	line_items = shopify_order.get("line_items")
+	cost_center = get_cost_center(shopify_order, setting)
 
 	for line_item in line_items:
 		item_code = get_item_code(line_item)
@@ -232,7 +233,7 @@ def get_order_taxes(shopify_order, setting, items,cost_center):
 			taxes.append(
 				{
 					"charge_type": "Actual",
-					"account_head": get_tax_account_head(tax, charge_type="sales_tax"),
+					"account_head": get_tax_account_head(tax,shopify_order, setting, charge_type="sales_tax"),
 					"description": (
 						get_tax_account_description(tax)
 						or f"{tax.get('title')} - {tax.get('rate') * 100.0:.2f}%"
@@ -288,12 +289,14 @@ def consolidate_order_taxes(taxes):
 	return tax_account_wise_data.values()
 
 
-def get_tax_account_head(tax, charge_type: Literal["shipping", "sales_tax"] | None = None):
+def get_tax_account_head(tax,shopify_order, setting, charge_type: Literal["shipping", "sales_tax"] | None = None):
 	tax_title = str(tax.get("title"))
+
+	company = get_company(shopify_order, setting)
 
 	tax_account = frappe.db.get_value(
 		"Shopify Tax Account",
-		{"parent": SETTING_DOCTYPE, "shopify_tax": tax_title},
+		{"parent": SETTING_DOCTYPE, "shopify_tax": tax_title,"custom_company" : company},
 		"tax_account",
 	)
 
@@ -321,7 +324,8 @@ def get_tax_account_description(tax):
 def update_taxes_with_shipping_lines(taxes, shipping_lines, setting, items, taxes_inclusive=False):
 	"""Shipping lines represents the shipping details,
 	each such shipping detail consists of a list of tax_lines"""
-	shipping_as_item = cint(setting.add_shipping_as_item) and setting.shipping_item
+	shipping_as_item = cint(setting.add_shipping_as_item) and setting.
+
 	for shipping_charge in shipping_lines:
 		if shipping_charge.get("price"):
 			shipping_discounts = shipping_charge.get("discount_allocations") or []
@@ -353,7 +357,7 @@ def update_taxes_with_shipping_lines(taxes, shipping_lines, setting, items, taxe
 						"description": get_tax_account_description(shipping_charge)
 						or shipping_charge["title"],
 						"tax_amount": shipping_charge_amount,
-						"cost_center": setting.cost_center,
+						"cost_center": cost_center,
 					}
 				)
 
