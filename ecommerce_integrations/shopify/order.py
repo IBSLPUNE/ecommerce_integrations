@@ -102,7 +102,7 @@ def create_sales_order(shopify_order, setting, company=None):
 
 			return ""
 
-		cost_center = get_cost_center(shopify_order,setting,items)
+		cost_center = get_cost_center(shopify_order,setting)
 		company = get_company(shopify_order,setting)
 		taxes = get_order_taxes(shopify_order, setting, items,cost_center)
 		so = frappe.get_doc(
