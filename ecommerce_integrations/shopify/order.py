@@ -138,23 +138,29 @@ def create_sales_order(shopify_order, setting, company=None):
 
 	return so
 
-def get_company(shopify_order,setting):
+def get_company(shopify_order, setting):
 	prov = shopify_order.get("billing_address", {}).get("province")
-	for row in setting.get("company_mapping", []):
-		if row.get("custom_province") == prov:
-			#frappe.throw(str(row.get('custom_company')))
-			company = row.get("custom_company")
-			break
-	return company
+	if not prov:
+		frappe.throw(_("Province is missing in the billing address. Cannot determine company."))
 
-def get_cost_center(shopify_order,setting):
-	prov = shopify_order.get("billing_address", {}).get("province")
 	for row in setting.get("company_mapping", []):
 		if row.get("custom_province") == prov:
-			#frappe.throw(str(row.get('custom_company')))
-			cost_center = row.get("cost_center")
-			break
-	return cost_center
+			return row.get("custom_company")
+
+	frappe.throw(_("No company mapping found for province: {0}").format(prov))
+
+
+def get_cost_center(shopify_order, setting):
+	prov = shopify_order.get("billing_address", {}).get("province")
+	if not prov:
+		frappe.throw(_("Province is missing in the billing address. Cannot determine cost center."))
+
+	for row in setting.get("company_mapping", []):
+		if row.get("custom_province") == prov:
+			return row.get("cost_center")
+
+	frappe.throw(_("No cost center mapping found for province: {0}").format(prov))
+
 
 
 def get_order_items(order_items, setting, delivery_date,company, taxes_inclusive):
@@ -226,6 +232,7 @@ def get_order_taxes(shopify_order, setting, items,cost_center):
 	taxes = []
 	line_items = shopify_order.get("line_items")
 	cost_center = get_cost_center(shopify_order, setting)
+	company = get_company(shopify_order,setting)
 
 	for line_item in line_items:
 		item_code = get_item_code(line_item)
@@ -233,9 +240,9 @@ def get_order_taxes(shopify_order, setting, items,cost_center):
 			taxes.append(
 				{
 					"charge_type": "Actual",
-					"account_head": get_tax_account_head(tax,shopify_order, setting, charge_type="sales_tax"),
+					"account_head": get_tax_account_head(tax,company),
 					"description": (
-						get_tax_account_description(tax)
+						get_tax_account_description(tax,company)
 						or f"{tax.get('title')} - {tax.get('rate') * 100.0:.2f}%"
 					),
 					"tax_amount": tax.get("price"),
@@ -289,34 +296,40 @@ def consolidate_order_taxes(taxes):
 	return tax_account_wise_data.values()
 
 
-def get_tax_account_head(tax,shopify_order, setting, charge_type: Literal["shipping", "sales_tax"] | None = None):
+def get_tax_account_head(tax, company):
 	tax_title = str(tax.get("title"))
 
-	company = get_company(shopify_order, setting)
-
 	tax_account = frappe.db.get_value(
-		"Shopify Tax Account",
-		{"parent": SETTING_DOCTYPE, "shopify_tax": tax_title,"custom_company" : company},
+		"Shopify Tax Account", 
+		{"parent": SETTING_DOCTYPE, "shopify_tax": tax_title, "custom_company": company}, 
 		"tax_account",
 	)
 
-	if not tax_account and charge_type:
-		tax_account = frappe.db.get_single_value(SETTING_DOCTYPE, DEFAULT_TAX_FIELDS[charge_type])
-
 	if not tax_account:
-		frappe.throw(_("Tax Account not specified for Shopify Tax {0}").format(tax.get("title")))
+		frappe.throw(
+			_("Tax Account not specified for Shopify Tax {0} and Company {1}").format(
+				tax.get("title"), company
+			)
+		)
 
 	return tax_account
 
 
-def get_tax_account_description(tax):
+def get_tax_account_description(tax, company):
 	tax_title = tax.get("title")
 
 	tax_description = frappe.db.get_value(
-		"Shopify Tax Account",
-		{"parent": SETTING_DOCTYPE, "shopify_tax": tax_title},
+		"Shopify Tax Account", 
+		{"parent": SETTING_DOCTYPE, "shopify_tax": tax_title, "custom_company": company}, 
 		"tax_description",
 	)
+
+	if not tax_description:
+		frappe.throw(
+			_("Tax Description not specified for Shopify Tax {0} and Company {1}").format(
+				tax.get("title"), company
+			)
+		)
 
 	return tax_description
 
