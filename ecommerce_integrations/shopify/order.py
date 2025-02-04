@@ -147,7 +147,7 @@ def get_company(shopify_order,setting):
 			break
 	return company
 
-def get_cost_center(shopify_order,setting,items):
+def get_cost_center(shopify_order,setting):
 	prov = shopify_order.get("billing_address", {}).get("province")
 	for row in setting.get("company_mapping", []):
 		if row.get("custom_province") == prov:
