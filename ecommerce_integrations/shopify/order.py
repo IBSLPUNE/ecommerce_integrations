@@ -296,7 +296,7 @@ def consolidate_order_taxes(taxes):
 	return tax_account_wise_data.values()
 
 
-def get_tax_account_head(tax, company):
+def get_tax_account_head(tax, company,charge_type: Optional[Literal["shipping", "sales_tax"]] = None):
 	tax_title = str(tax.get("title"))
 
 	tax_account = frappe.db.get_value(
@@ -334,7 +334,7 @@ def get_tax_account_description(tax, company):
 	return tax_description
 
 
-def update_taxes_with_shipping_lines(taxes, shipping_lines, setting, items, taxes_inclusive=False):
+def update_taxes_with_shipping_lines(taxes,company, shipping_lines, setting, items, taxes_inclusive=False):
 	"""Shipping lines represents the shipping details,
 	each such shipping detail consists of a list of tax_lines"""
 	shipping_as_item = cint(setting.add_shipping_as_item) and setting.shipping_item
@@ -366,7 +366,7 @@ def update_taxes_with_shipping_lines(taxes, shipping_lines, setting, items, taxe
 				taxes.append(
 					{
 						"charge_type": "Actual",
-						"account_head": get_tax_account_head(shipping_charge, charge_type="shipping"),
+						"account_head": get_tax_account_head(shipping_charge,company, charge_type="shipping"),
 						"description": get_tax_account_description(shipping_charge)
 						or shipping_charge["title"],
 						"tax_amount": shipping_charge_amount,
