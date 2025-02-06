@@ -256,6 +256,7 @@ def get_order_taxes(shopify_order, setting, items,cost_center):
 	update_taxes_with_shipping_lines(
 		taxes,
 		company,
+		shopify_order,
 		shopify_order.get("shipping_lines"),
 		setting,
 		items,
@@ -335,10 +336,11 @@ def get_tax_account_description(tax, company):
 	return tax_description
 
 
-def update_taxes_with_shipping_lines(taxes,company, shipping_lines, setting, items, taxes_inclusive=False):
+def update_taxes_with_shipping_lines(taxes,company,shopify_order, shipping_lines, setting, items, taxes_inclusive=False):
 	"""Shipping lines represents the shipping details,
 	each such shipping detail consists of a list of tax_lines"""
 	shipping_as_item = cint(setting.add_shipping_as_item) and setting.shipping_item
+	cost_center = get_cost_center(shopify_order,setting)
 
 	for shipping_charge in shipping_lines:
 		if shipping_charge.get("price"):
@@ -385,7 +387,7 @@ def update_taxes_with_shipping_lines(taxes,company, shipping_lines, setting, ite
 						or f"{tax.get('title')} - {tax.get('rate') * 100.0:.2f}%"
 					),
 					"tax_amount": tax["price"],
-					"cost_center": setting.cost_center,
+					"cost_center": cost_center,
 					"item_wise_tax_detail": {
 						setting.shipping_item: [flt(tax.get("rate")) * 100, flt(tax.get("price"))]
 					}
