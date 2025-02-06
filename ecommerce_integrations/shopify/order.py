@@ -240,7 +240,7 @@ def get_order_taxes(shopify_order, setting, items,cost_center):
 			taxes.append(
 				{
 					"charge_type": "Actual",
-					"account_head": get_tax_account_head(tax,company),
+					"account_head": get_tax_account_head(tax,company,charge_type="sales_tax"),
 					"description": (
 						get_tax_account_description(tax,company)
 						or f"{tax.get('title')} - {tax.get('rate') * 100.0:.2f}%"
@@ -368,7 +368,7 @@ def update_taxes_with_shipping_lines(taxes,company, shipping_lines, setting, ite
 					{
 						"charge_type": "Actual",
 						"account_head": get_tax_account_head(shipping_charge,company, charge_type="shipping"),
-						"description": get_tax_account_description(shipping_charge)
+						"description": get_tax_account_description(shipping_charge,company)
 						or shipping_charge["title"],
 						"tax_amount": shipping_charge_amount,
 						"cost_center": cost_center,
@@ -379,9 +379,9 @@ def update_taxes_with_shipping_lines(taxes,company, shipping_lines, setting, ite
 			taxes.append(
 				{
 					"charge_type": "Actual",
-					"account_head": get_tax_account_head(tax, charge_type="sales_tax"),
+					"account_head": get_tax_account_head(tax,company, charge_type="sales_tax"),
 					"description": (
-						get_tax_account_description(tax)
+						get_tax_account_description(tax,company)
 						or f"{tax.get('title')} - {tax.get('rate') * 100.0:.2f}%"
 					),
 					"tax_amount": tax["price"],
