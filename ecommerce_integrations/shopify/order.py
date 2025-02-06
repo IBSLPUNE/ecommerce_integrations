@@ -161,6 +161,13 @@ def get_cost_center(shopify_order, setting):
 
 	frappe.throw(_("No cost center mapping found for province: {0}").format(prov))
 
+def warehouse_mapping(order_items, setting, delivery_date,company, taxes_inclusive):
+	for row in setting.get("company_mapping", {}):
+		if row.get("custom_province") == prov:
+			return row.get("warehouse")
+			
+	frappe.throw(_("No company mapping found for province: {0}").format(prov))
+
 
 
 def get_order_items(order_items, setting, delivery_date,company, taxes_inclusive):
@@ -198,13 +205,6 @@ def get_order_items(order_items, setting, delivery_date,company, taxes_inclusive
 
 	return items
 
-def warehouse_mapping(order_items, setting, delivery_date,company, taxes_inclusive):
-	custom_warehouse = None
-	for row in setting.get("company_mapping", {}):
-		if row.get("custom_company") == company:
-			custom_warehouse = row.get("warehouse")
-			break
-	return custom_warehouse
 
 def _get_item_price(line_item, taxes_inclusive: bool) -> float:
 	price = flt(line_item.get("price"))
@@ -239,7 +239,7 @@ def get_order_taxes(shopify_order, setting, items,cost_center):
 		for tax in line_item.get("tax_lines"):
 			taxes.append(
 				{
-					"charge_type": "Actual",
+					"charge_type": "On Net Total",
 					"account_head": get_tax_account_head(tax,company,charge_type="sales_tax"),
 					"description": (
 						get_tax_account_description(tax,company)
@@ -341,6 +341,7 @@ def update_taxes_with_shipping_lines(taxes,company,shopify_order, shipping_lines
 	each such shipping detail consists of a list of tax_lines"""
 	shipping_as_item = cint(setting.add_shipping_as_item) and setting.shipping_item
 	cost_center = get_cost_center(shopify_order,setting)
+	custom_warehouse = warehouse_mapping(order_items, setting, delivery_date,company, taxes_inclusive)
 
 	for shipping_charge in shipping_lines:
 		if shipping_charge.get("price"):
@@ -362,7 +363,7 @@ def update_taxes_with_shipping_lines(taxes,company,shopify_order, shipping_lines
 						"delivery_date": items[-1]["delivery_date"] if items else nowdate(),
 						"qty": 1,
 						"stock_uom": "Nos",
-						"warehouse": setting.warehouse,
+						"warehouse": custom_warehouse,
 					}
 				)
 			else:
