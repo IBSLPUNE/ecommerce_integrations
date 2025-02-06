@@ -162,10 +162,11 @@ def get_cost_center(shopify_order, setting):
 	frappe.throw(_("No cost center mapping found for province: {0}").format(prov))
 
 def warehouse_mapping(order_items, setting, delivery_date,company, taxes_inclusive):
+	prov = shopify_order.get("billing_address", {}).get("province")
 	for row in setting.get("company_mapping", {}):
 		if row.get("custom_province") == prov:
 			return row.get("warehouse")
-			
+
 	frappe.throw(_("No company mapping found for province: {0}").format(prov))
 
 
