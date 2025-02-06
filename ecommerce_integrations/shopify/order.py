@@ -339,7 +339,7 @@ def get_tax_account_description(tax, company):
 	return tax_description
 
 
-def update_taxes_with_shipping_lines(shopify_order,taxes,company,shopify_order, shipping_lines, setting, items, taxes_inclusive=False):
+def update_taxes_with_shipping_lines(taxes,company,shopify_order, shipping_lines, setting, items, taxes_inclusive=False):
 	"""Shipping lines represents the shipping details,
 	each such shipping detail consists of a list of tax_lines"""
 	shipping_as_item = cint(setting.add_shipping_as_item) and setting.shipping_item
