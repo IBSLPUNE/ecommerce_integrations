@@ -83,6 +83,7 @@ def create_sales_order(shopify_order, setting, company=None):
 
 	if not so:
 		items = get_order_items(
+			shopify_order,
 			shopify_order.get("line_items"),
 			setting,
 			getdate(shopify_order.get("created_at")),
@@ -161,7 +162,7 @@ def get_cost_center(shopify_order, setting):
 
 	frappe.throw(_("No cost center mapping found for province: {0}").format(prov))
 
-def warehouse_mapping(order_items, setting, delivery_date,company, taxes_inclusive):
+def warehouse_mapping(shopify_order,order_items, setting, delivery_date,company, taxes_inclusive):
 	prov = shopify_order.get("billing_address", {}).get("province")
 	for row in setting.get("company_mapping", {}):
 		if row.get("custom_province") == prov:
@@ -171,7 +172,7 @@ def warehouse_mapping(order_items, setting, delivery_date,company, taxes_inclusi
 
 
 
-def get_order_items(order_items, setting, delivery_date,company, taxes_inclusive):
+def get_order_items(shopify_order,order_items, setting, delivery_date,company, taxes_inclusive):
 	items = []
 	all_product_exists = True
 	product_not_exists = []
@@ -186,7 +187,7 @@ def get_order_items(order_items, setting, delivery_date,company, taxes_inclusive
 
 		if all_product_exists:
 			item_code = get_item_code(shopify_item)
-			custom_warehouse = warehouse_mapping(order_items, setting, delivery_date,company, taxes_inclusive)
+			custom_warehouse = warehouse_mapping(shopify_order,order_items, setting, delivery_date,company, taxes_inclusive)
 			items.append(
 				{
 					"item_code": item_code,
@@ -255,6 +256,7 @@ def get_order_taxes(shopify_order, setting, items,cost_center):
 			)
 
 	update_taxes_with_shipping_lines(
+		shopify_order,
 		taxes,
 		company,
 		shopify_order,
@@ -337,12 +339,12 @@ def get_tax_account_description(tax, company):
 	return tax_description
 
 
-def update_taxes_with_shipping_lines(taxes,company,shopify_order, shipping_lines, setting, items, taxes_inclusive=False):
+def update_taxes_with_shipping_lines(shopify_order,taxes,company,shopify_order, shipping_lines, setting, items, taxes_inclusive=False):
 	"""Shipping lines represents the shipping details,
 	each such shipping detail consists of a list of tax_lines"""
 	shipping_as_item = cint(setting.add_shipping_as_item) and setting.shipping_item
 	cost_center = get_cost_center(shopify_order,setting)
-	custom_warehouse = warehouse_mapping(order_items, setting, delivery_date,company, taxes_inclusive)
+	custom_warehouse = warehouse_mapping(shopify_order,order_items, setting, delivery_date,company, taxes_inclusive)
 
 	for shipping_charge in shipping_lines:
 		if shipping_charge.get("price"):
