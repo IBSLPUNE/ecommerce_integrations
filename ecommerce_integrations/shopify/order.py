@@ -187,6 +187,7 @@ def get_order_items(shopify_order,order_items, setting, delivery_date,company, t
 
 		if all_product_exists:
 			item_code = get_item_code(shopify_item)
+			delive
 			custom_warehouse = warehouse_mapping(shopify_order, setting, delivery_date,company, taxes_inclusive)
 			items.append(
 				{
@@ -343,6 +344,7 @@ def update_taxes_with_shipping_lines(taxes,company,shopify_order, shipping_lines
 	each such shipping detail consists of a list of tax_lines"""
 	shipping_as_item = cint(setting.add_shipping_as_item) and setting.shipping_item
 	cost_center = get_cost_center(shopify_order,setting)
+	delivery_date = getdate(shopify_order.get("created_at")) or nowdate()
 	custom_warehouse = warehouse_mapping(shopify_order, setting, delivery_date,company, taxes_inclusive)
 
 	for shipping_charge in shipping_lines:
