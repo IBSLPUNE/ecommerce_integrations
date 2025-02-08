@@ -256,7 +256,6 @@ def get_order_taxes(shopify_order, setting, items,cost_center):
 			)
 
 	update_taxes_with_shipping_lines(
-		shopify_order,
 		taxes,
 		company,
 		shopify_order,
