@@ -187,7 +187,6 @@ def get_order_items(shopify_order,order_items, setting, delivery_date,company, t
 
 		if all_product_exists:
 			item_code = get_item_code(shopify_item)
-			delive
 			custom_warehouse = warehouse_mapping(shopify_order, setting, delivery_date,company, taxes_inclusive)
 			items.append(
 				{
