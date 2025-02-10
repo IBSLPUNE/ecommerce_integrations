@@ -48,7 +48,8 @@ def create_sales_invoice(shopify_order, setting, so):
 		sales_invoice.due_date = posting_date
 		sales_invoice.naming_series = setting.sales_invoice_series or "SI-Shopify-"
 		sales_invoice.flags.ignore_mandatory = True
-		set_cost_center(sales_invoice.items, setting.cost_center)
+		cost_center_invoice = get_cost_center(shopify_order, setting)
+		set_cost_center(sales_invoice.items, cost_center_invoice)
 		sales_invoice.insert(ignore_mandatory=True)
 		sales_invoice.submit()
 		if sales_invoice.grand_total > 0:
@@ -62,6 +63,14 @@ def set_cost_center(items, cost_center):
 	for item in items:
 		item.cost_center = cost_center
 
+def get_cost_center(shopify_order, setting):
+	prov = shopify_order.get("billing_address", {}).get("province")
+	if not prov:
+		frappe.throw(_("Province is missing in the billing address. Cannot determine cost center."))
+
+	for row in setting.get("company_mapping", []):
+		if row.get("custom_province") == prov:
+			return row.get("cost_center")
 
 def make_payament_entry_against_sales_invoice(doc, setting, posting_date=None):
 	from erpnext.accounts.doctype.payment_entry.payment_entry import get_payment_entry
