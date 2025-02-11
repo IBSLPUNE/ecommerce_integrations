@@ -53,7 +53,7 @@ def create_sales_invoice(shopify_order, setting, so):
 		sales_invoice.insert(ignore_mandatory=True)
 		sales_invoice.submit()
 		if sales_invoice.grand_total > 0:
-			make_payament_entry_against_sales_invoice(sales_invoice, setting, posting_date)
+			make_payament_entry_against_sales_invoice(shopify_order, setting,sales_invoice, setting, posting_date)
 
 		if shopify_order.get("note"):
 			sales_invoice.add_comment(text=f"Order Note: {shopify_order.get('note')}")
@@ -72,13 +72,27 @@ def get_cost_center(shopify_order, setting):
 		if row.get("custom_province") == prov:
 			return row.get("cost_center")
 
-def make_payament_entry_against_sales_invoice(doc, setting, posting_date=None):
+
+def make_payament_entry_against_sales_invoice(shopify_order, setting,doc, setting, posting_date=None):
 	from erpnext.accounts.doctype.payment_entry.payment_entry import get_payment_entry
 
-	payment_entry = get_payment_entry(doc.doctype, doc.name, bank_account=setting.cash_bank_account)
+	cash_account = get_cash_account(shopify_order, setting)
+	payment_entry = get_payment_entry(doc.doctype, doc.name, bank_account=cash_account)
 	payment_entry.flags.ignore_mandatory = True
 	payment_entry.reference_no = doc.name
 	payment_entry.posting_date = posting_date or nowdate()
 	payment_entry.reference_date = posting_date or nowdate()
 	payment_entry.insert(ignore_permissions=True)
 	payment_entry.submit()
+
+
+def get_cash_account(shopify_order, setting):
+	prov = shopify_order.get("billing_address", {}).get("province")
+	if not prov:
+		frappe.throw(_("Province is missing in the billing address. Cannot determine company."))
+
+	for row in setting.get("company_mapping", []):
+		if row.get("custom_province") == prov:
+			return row.get("cash_account")
+
+	frappe.throw(_("No company mapping found for province: {0}").format(prov))
