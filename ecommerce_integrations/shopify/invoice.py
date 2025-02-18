@@ -39,14 +39,14 @@ def create_sales_invoice(shopify_order, setting, so):
 	):
 
 		posting_date = getdate(shopify_order.get("created_at")) or nowdate()
-
+		invoice_series = get_invoice_series(shopify_order,setting)
 		sales_invoice = make_sales_invoice(so.name, ignore_permissions=True)
 		sales_invoice.set(ORDER_ID_FIELD, str(shopify_order.get("id")))
 		sales_invoice.set(ORDER_NUMBER_FIELD, shopify_order.get("name"))
 		sales_invoice.set_posting_time = 1
 		sales_invoice.posting_date = posting_date
 		sales_invoice.due_date = posting_date
-		sales_invoice.naming_series = setting.sales_invoice_series or "SI-Shopify-"
+		sales_invoice.naming_series = invoice_series or "SI-Shopify-"
 		sales_invoice.flags.ignore_mandatory = True
 		cost_center_invoice = get_cost_center(shopify_order, setting)
 		set_cost_center(sales_invoice.items, cost_center_invoice)
@@ -95,4 +95,16 @@ def get_cash_account(shopify_order, setting):
 		if row.get("custom_province") == prov:
 			return row.get("cash_account")
 
-	frappe.throw(_("No company mapping found for province: {0}").format(prov))
+	frappe.throw(_("No cash account mapping found for province: {0}").format(prov))
+
+
+def get_invoice_series(shopify_order,setting):
+	prov = shopify_order.get("billing_address", {}).get("province")
+	if not prov:
+		frappe.throw(_("Province is missing in the billing address. Cannot determine series."))
+
+	for row in setting.get("company_mapping", []):
+		if row.get("custom_province") == prov:
+			return row.get("sales_invoice_series")
+
+	frappe.throw(_("No series mapping found for province: {0}").format(prov))

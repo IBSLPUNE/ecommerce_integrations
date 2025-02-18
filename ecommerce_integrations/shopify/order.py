@@ -106,10 +106,11 @@ def create_sales_order(shopify_order, setting, company=None):
 		cost_center = get_cost_center(shopify_order,setting)
 		company = get_company(shopify_order,setting)
 		taxes = get_order_taxes(shopify_order, setting, items,cost_center)
+		order_series = get_order_series(shopify_order, setting)
 		so = frappe.get_doc(
 			{
 				"doctype": "Sales Order",
-				"naming_series": setting.sales_order_series or "SO-Shopify-",
+				"naming_series": order_series or "SO-Shopify-",
 				ORDER_ID_FIELD: str(shopify_order.get("id")),
 				ORDER_NUMBER_FIELD: shopify_order.get("name"),
 				"customer": customer,
@@ -138,6 +139,17 @@ def create_sales_order(shopify_order, setting, company=None):
 		so = frappe.get_doc("Sales Order", so)
 
 	return so
+
+def get_order_series(shopify_order,setting):
+	prov = shopify_order.get("billing_address", {}).get("province")
+	if not prov:
+		frappe.throw(_("Province is missing in the billing address. Cannot determine series."))
+
+	for row in setting.get("company_mapping", []):
+		if row.get("custom_province") == prov:
+			return row.get("sales_order_series")
+
+	frappe.throw(_("No series mapping found for province: {0}").format(prov))
 
 def get_company(shopify_order, setting):
 	prov = shopify_order.get("billing_address", {}).get("province")
@@ -168,7 +180,7 @@ def warehouse_mapping(shopify_order, setting, delivery_date,company, taxes_inclu
 		if row.get("custom_province") == prov:
 			return row.get("warehouse")
 
-	frappe.throw(_("No company mapping found for province: {0}").format(prov))
+	frappe.throw(_("No warehouse mapping found for province: {0}").format(prov))
 
 
 
