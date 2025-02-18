@@ -53,7 +53,7 @@ def create_sales_invoice(shopify_order, setting, so):
 		sales_invoice.insert(ignore_mandatory=True)
 		sales_invoice.submit()
 		if sales_invoice.grand_total > 0:
-			make_payament_entry_against_sales_invoice(shopify_order, setting,sales_invoice, setting, posting_date)
+			make_payament_entry_against_sales_invoice(shopify_order,sales_invoice, setting, posting_date)
 
 		if shopify_order.get("note"):
 			sales_invoice.add_comment(text=f"Order Note: {shopify_order.get('note')}")
@@ -73,7 +73,7 @@ def get_cost_center(shopify_order, setting):
 			return row.get("cost_center")
 
 
-def make_payament_entry_against_sales_invoice(shopify_order, setting,doc, setting, posting_date=None):
+def make_payament_entry_against_sales_invoice(shopify_order,doc, setting, posting_date=None):
 	from erpnext.accounts.doctype.payment_entry.payment_entry import get_payment_entry
 
 	cash_account = get_cash_account(shopify_order, setting)
