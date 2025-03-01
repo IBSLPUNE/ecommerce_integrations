@@ -253,7 +253,7 @@ def get_order_taxes(shopify_order, setting, items,cost_center):
 		for tax in line_item.get("tax_lines"):
 			taxes.append(
 				{
-					"charge_type": "On Net Total",
+					"charge_type": "Actual",
 					"account_head": get_tax_account_head(tax,company,charge_type="sales_tax"),
 					"description": (
 						get_tax_account_description(tax,company)
