@@ -66,13 +66,13 @@ def set_cost_center(items, cost_center):
 def get_cost_center(shopify_order, setting):
 	prov = shopify_order.get("billing_address", {}).get("zip")
 	if not prov:
-		return setting.cost_center
+		frappe.throw(_("Pincode not found in shopify data {0}").format(prov))
 
 	for row in setting.get("company_mapping", []):
 		if row.get("pincode") == prov:
 			return row.get("cost_center")
-
-	frappe.throw(_("No cost center mapping found for pincode: {0}").format(prov))
+		else:
+			return setting.cost_center
 
 
 def make_payament_entry_against_sales_invoice(shopify_order,doc, setting, posting_date=None):
@@ -91,22 +91,24 @@ def make_payament_entry_against_sales_invoice(shopify_order,doc, setting, postin
 def get_cash_account(shopify_order, setting):
 	prov = shopify_order.get("billing_address", {}).get("zip")
 	if not prov:
-		return setting.cash_bank_account
+		frappe.throw(_("Pincode not found in shopify data {0}").format(prov))
 
 	for row in setting.get("company_mapping", []):
 		if row.get("pincode") == prov:
 			return row.get("cash_account")
+		else:
+			return setting.cash_bank_account
 
-	frappe.throw(_("No cash account mapping found for pincode: {0}").format(prov))
 
 
 def get_invoice_series(shopify_order,setting):
 	prov = shopify_order.get("billing_address", {}).get("zip")
 	if not prov:
-		return setting.sales_invoice_series
+		frappe.throw(_("Pincode not found in shopify data {0}").format(prov))
 
 	for row in setting.get("company_mapping", []):
 		if row.get("pincode") == prov:
 			return row.get("sales_invoice_series")
+		else:
+			return setting.sales_invoice_series
 
-	frappe.throw(_("No series mapping found for pincode: {0}").format(prov))

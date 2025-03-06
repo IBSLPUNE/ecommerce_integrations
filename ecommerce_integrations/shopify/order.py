@@ -145,47 +145,49 @@ def create_sales_order(shopify_order, setting, company=None):
 def get_order_series(shopify_order,setting):
 	prov = shopify_order.get("billing_address", {}).get("zip")
 	if not prov:
-		return setting.sales_order_series
+		frappe.throw(_("Pincode not found in shopify data {0}").format(prov))
 
 	for row in setting.get("company_mapping", []):
 		if row.get("pincode") == prov:
 			return row.get("sales_order_series")
+		else:
+			return setting.sales_order_series
 
-	frappe.throw(_("No series mapping found for province: {0}").format(prov))
 
 def get_company(shopify_order, setting):
 	prov = shopify_order.get("billing_address", {}).get("zip")
 	if not prov:
-		return setting.company
+		frappe.throw(_("Pincode not found in shopify data {0}").format(prov))
 
 	for row in setting.get("company_mapping", []):
 		if row.get("pincode") == prov:
 			return row.get("custom_company")
-
-	frappe.throw(_("No company mapping found for province: {0}").format(prov))
+		else:
+			return setting.company
 
 
 def get_cost_center(shopify_order, setting):
 	prov = shopify_order.get("billing_address", {}).get("zip")
 	if not prov:
-		return setting.cost_center
+		frappe.throw(_("Pincode not found in shopify data {0}").format(prov))
 
 	for row in setting.get("company_mapping", []):
 		if row.get("pincode") == prov:
 			return row.get("cost_center")
+		else:
+			return setting.cost_center
 
-	frappe.throw(_("No cost center mapping found for province: {0}").format(prov))
 
 def warehouse_mapping(shopify_order, setting, delivery_date,company, taxes_inclusive):
 	prov = shopify_order.get("billing_address", {}).get("zip")
 	if not prov:
-		return setting.warehouse
+		frappe.throw(_("Pincode not found in shopify data {0}").format(prov))
 	
 	for row in setting.get("company_mapping", {}):
 		if row.get("pincode") == prov:
 			return row.get("warehouse")
-
-	frappe.throw(_("No warehouse mapping found for province: {0}").format(prov))
+		else:
+			return setting.warehouse
 
 
 
