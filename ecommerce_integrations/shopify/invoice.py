@@ -64,13 +64,15 @@ def set_cost_center(items, cost_center):
 		item.cost_center = cost_center
 
 def get_cost_center(shopify_order, setting):
-	prov = shopify_order.get("billing_address", {}).get("province")
+	prov = shopify_order.get("billing_address", {}).get("zip")
 	if not prov:
-		frappe.throw(_("Province is missing in the billing address. Cannot determine cost center."))
+		return setting.cost_center
 
 	for row in setting.get("company_mapping", []):
-		if row.get("custom_province") == prov:
+		if row.get("pincode") == prov:
 			return row.get("cost_center")
+
+	frappe.throw(_("No cost center mapping found for pincode: {0}").format(prov))
 
 
 def make_payament_entry_against_sales_invoice(shopify_order,doc, setting, posting_date=None):
@@ -87,24 +89,24 @@ def make_payament_entry_against_sales_invoice(shopify_order,doc, setting, postin
 
 
 def get_cash_account(shopify_order, setting):
-	prov = shopify_order.get("billing_address", {}).get("province")
+	prov = shopify_order.get("billing_address", {}).get("zip")
 	if not prov:
-		frappe.throw(_("Province is missing in the billing address. Cannot determine company."))
+		return setting.cash_bank_account
 
 	for row in setting.get("company_mapping", []):
-		if row.get("custom_province") == prov:
+		if row.get("pincode") == prov:
 			return row.get("cash_account")
 
-	frappe.throw(_("No cash account mapping found for province: {0}").format(prov))
+	frappe.throw(_("No cash account mapping found for pincode: {0}").format(prov))
 
 
 def get_invoice_series(shopify_order,setting):
-	prov = shopify_order.get("billing_address", {}).get("province")
+	prov = shopify_order.get("billing_address", {}).get("zip")
 	if not prov:
-		frappe.throw(_("Province is missing in the billing address. Cannot determine series."))
+		return setting.sales_invoice_series
 
 	for row in setting.get("company_mapping", []):
-		if row.get("custom_province") == prov:
+		if row.get("pincode") == prov:
 			return row.get("sales_invoice_series")
 
-	frappe.throw(_("No series mapping found for province: {0}").format(prov))
+	frappe.throw(_("No series mapping found for pincode: {0}").format(prov))

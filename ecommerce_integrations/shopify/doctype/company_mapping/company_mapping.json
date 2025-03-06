@@ -7,6 +7,7 @@
  "engine": "InnoDB",
  "field_order": [
   "custom_province",
+  "pincode",
   "custom_province_code",
   "custom_company",
   "warehouse",
@@ -70,12 +71,17 @@
    "fieldtype": "Select",
    "label": "Sales Invoice Series",
    "options": "\nSINV-.YY.-\nSRET-.YY.-\nAmzn-Ind.-.#####\nCI/.FY./.####.\nCG/.FY./.####.\nCISS/.FY./.##\nCGSS/.FY./.##\nAmIn-RE.-.####\nAmUAE-RE.-.####\nAmUS-RE.-.####\nAmUK-RE.-.####\nACC-SINV-RET-.FY.-\nCN/.FY./.###\nTNBQ.-.#####\nShpy-Ind.-.#####\nShpy-Del.-.#####\nAmzn-US.-.#####\nAmzn-UK.-.#####\nAmzn-UAE.-.#####\nFlip-Ind.-.#####\nSCRAP/.FY./.####.\nSINV\nEXP/.FY./.####.\nCRN/.FY./.###\nCI/23-24/.####.\nCG/23-24/.####.\nCISS/23-24/.##\nCGSS/23-24/.##\nCN/23-24/.###\nEXP/23-24/.####.\nCRN/23-24/.###\nAmln-.FY.-.#####\nAmUS-.FY.-.#####\nAmUK-.FY.-.#####\nAInR-.FY.-.####\nAUSR-.FY.-.####\nAUKR-.FY.-.####\nShIN-.FY.-.#####\nDL/.FY./.####\nAMDL-.FY.-.###\nAMDL-RE-.###\nCIPVT/.FY./.###\nFILP-IND-RE-.###\nCIBW/.FY./.##"
+  },
+  {
+   "fieldname": "pincode",
+   "fieldtype": "Data",
+   "label": "Pincode"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-02-18 13:03:59.634158",
+ "modified": "2025-03-07 00:57:37.146033",
  "modified_by": "Administrator",
  "module": "shopify",
  "name": "Company mapping",

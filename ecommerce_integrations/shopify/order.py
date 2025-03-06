@@ -140,44 +140,49 @@ def create_sales_order(shopify_order, setting, company=None):
 
 	return so
 
+
+
 def get_order_series(shopify_order,setting):
-	prov = shopify_order.get("billing_address", {}).get("province")
+	prov = shopify_order.get("billing_address", {}).get("zip")
 	if not prov:
-		frappe.throw(_("Province is missing in the billing address. Cannot determine series."))
+		return setting.sales_order_series
 
 	for row in setting.get("company_mapping", []):
-		if row.get("custom_province") == prov:
+		if row.get("pincode") == prov:
 			return row.get("sales_order_series")
 
 	frappe.throw(_("No series mapping found for province: {0}").format(prov))
 
 def get_company(shopify_order, setting):
-	prov = shopify_order.get("billing_address", {}).get("province")
+	prov = shopify_order.get("billing_address", {}).get("zip")
 	if not prov:
-		frappe.throw(_("Province is missing in the billing address. Cannot determine company."))
+		return setting.company
 
 	for row in setting.get("company_mapping", []):
-		if row.get("custom_province") == prov:
+		if row.get("pincode") == prov:
 			return row.get("custom_company")
 
 	frappe.throw(_("No company mapping found for province: {0}").format(prov))
 
 
 def get_cost_center(shopify_order, setting):
-	prov = shopify_order.get("billing_address", {}).get("province")
+	prov = shopify_order.get("billing_address", {}).get("zip")
 	if not prov:
-		frappe.throw(_("Province is missing in the billing address. Cannot determine cost center."))
+		return setting.cost_center
 
 	for row in setting.get("company_mapping", []):
-		if row.get("custom_province") == prov:
+		if row.get("pincode") == prov:
 			return row.get("cost_center")
 
 	frappe.throw(_("No cost center mapping found for province: {0}").format(prov))
 
 def warehouse_mapping(shopify_order, setting, delivery_date,company, taxes_inclusive):
-	prov = shopify_order.get("billing_address", {}).get("province")
+	prov = shopify_order.get("billing_address", {}).get("zip")
+	if not prov:
+		return setting.warehouse
+	
 	for row in setting.get("company_mapping", {}):
-		if row.get("custom_province") == prov:
+		if row.get("pincode") == prov:
 			return row.get("warehouse")
 
 	frappe.throw(_("No warehouse mapping found for province: {0}").format(prov))
