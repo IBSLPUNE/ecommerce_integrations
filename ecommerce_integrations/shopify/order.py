@@ -153,6 +153,8 @@ def get_order_series(shopify_order,setting):
 		else:
 			return setting.sales_order_series
 
+	frappe.throw(_("No series mapping found for province: {0}").format(prov))
+
 
 def get_company(shopify_order, setting):
 	prov = shopify_order.get("billing_address", {}).get("zip")
@@ -164,6 +166,8 @@ def get_company(shopify_order, setting):
 			return row.get("custom_company")
 		else:
 			return setting.company
+
+	frappe.throw(_("No company mapping found for province: {0}").format(prov))
 
 
 def get_cost_center(shopify_order, setting):
@@ -177,6 +181,8 @@ def get_cost_center(shopify_order, setting):
 		else:
 			return setting.cost_center
 
+	frappe.throw(_("No cost center mapping found for province: {0}").format(prov))
+
 
 def warehouse_mapping(shopify_order, setting, delivery_date,company, taxes_inclusive):
 	prov = shopify_order.get("billing_address", {}).get("zip")
@@ -188,6 +194,8 @@ def warehouse_mapping(shopify_order, setting, delivery_date,company, taxes_inclu
 			return row.get("warehouse")
 		else:
 			return setting.warehouse
+
+	frappe.throw(_("No warehouse mapping found for province: {0}").format(prov))
 
 
 

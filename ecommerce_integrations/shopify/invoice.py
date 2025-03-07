@@ -74,6 +74,8 @@ def get_cost_center(shopify_order, setting):
 		else:
 			return setting.cost_center
 
+	frappe.throw(_("No cost center mapping found  for province: {0}").format(prov))
+
 
 def make_payament_entry_against_sales_invoice(shopify_order,doc, setting, posting_date=None):
 	from erpnext.accounts.doctype.payment_entry.payment_entry import get_payment_entry
@@ -99,6 +101,8 @@ def get_cash_account(shopify_order, setting):
 		else:
 			return setting.cash_bank_account
 
+	frappe.throw(_("No cash account mapping found for province: {0}").format(prov))
+
 
 
 def get_invoice_series(shopify_order,setting):
@@ -112,3 +116,4 @@ def get_invoice_series(shopify_order,setting):
 		else:
 			return setting.sales_invoice_series
 
+	frappe.throw(_("No sales invoice series mapping found for province: {0}").format(prov))
